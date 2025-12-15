@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physics Free Fall Simulator</title>
+    <title> Free Fall Simulator</title>
     <style>
+        /* --- 1. Modern Dark Styling --- */
         :root {
-            --primary-color: #3498db;
-            --accent-color: #e74c3c;
-            --text-color: #2c3e50;
-            --bg-color: #ecf0f1;
+            --dark-bg: #1e1e1e;
+            --dark-surface: #2d2d30;
+            --primary-accent: #00bcd4; /* Cyan/Teal */
+            --text-light: #f0f0f0;
+            --text-muted: #9a9a9a;
+            --ground-color: #4CAF50;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -24,61 +27,74 @@
             overflow: hidden;
         }
 
-        /* --- UI Controls Section --- */
+        /* Header/Controls */
         header {
-            background: white;
+            background: var(--dark-surface);
             width: 100%;
             padding: 1rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 25px;
             align-items: center;
             z-index: 10;
         }
 
-        h1 { margin: 0; font-size: 1.2rem; margin-right: 20px; }
+        h1 { margin: 0; font-size: 1.4rem; color: var(--primary-accent); }
 
         .input-group {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+        
+        label { color: var(--text-muted); }
 
         input {
             padding: 8px;
-            border: 1px solid #ccc;
+            background-color: #3f3f42;
+            color: var(--text-light);
+            border: 1px solid #555;
             border-radius: 4px;
             width: 100px;
             font-size: 1rem;
+            transition: border-color 0.2s;
         }
+
+        input:focus { border-color: var(--primary-accent); outline: none; }
 
         button {
             padding: 8px 20px;
-            background-color: var(--primary-color);
-            color: white;
+            background-color: var(--primary-accent);
+            color: var(--dark-surface);
+            font-weight: bold;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 1rem;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
         }
 
-        button:hover { background-color: #2980b9; }
+        button:hover { background-color: #0097a7; }
+        button:active { transform: scale(0.98); }
         
-        button.reset { background-color: #95a5a6; }
-        button.reset:hover { background-color: #7f8c8d; }
+        button.reset { 
+            background-color: #616161; 
+            color: var(--text-light);
+        }
+        button.reset:hover { background-color: #424242; }
 
-        /* --- Simulation Area --- */
+        /* Simulation Area */
         #sim-container {
             position: relative;
             flex-grow: 1;
             width: 100%;
             max-width: 800px;
             margin: 20px;
-            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%); /* Sky gradient */
-            border: 2px solid #bdc3c7;
-            border-bottom: 10px solid #27ae60; /* Ground */
+            /* Dark Sky / Atmosphere Gradient */
+            background: linear-gradient(to bottom, #1f2f3f 0%, #3a4a5a 100%);
+            border: 2px solid #555;
+            border-bottom: 15px solid var(--ground-color);
             overflow: hidden;
             border-radius: 8px;
         }
@@ -89,64 +105,64 @@
             transform: translateX(-50%);
             width: 40px;
             height: 40px;
-            background: radial-gradient(circle at 30% 30%, #ff7675, #d63031);
+            background: radial-gradient(circle at 30% 30%, #ffeb3b, #f57f17); /* Gold/Yellow */
             border-radius: 50%;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 10px rgba(0,0,0,0.5);
             top: 0;
+            z-index: 5;
         }
 
-        /* --- Data Dashboard --- */
+        /* Data Dashboard */
         #dashboard {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(45, 45, 48, 0.95);
+            border: 1px solid #444;
             padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            min-width: 150px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            min-width: 160px;
+            z-index: 6;
         }
 
-        .metric {
-            margin-bottom: 10px;
-        }
-
+        .metric { margin-bottom: 12px; }
         .metric label {
-            display: block;
-            font-size: 0.8rem;
-            color: #7f8c8d;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            display: block; font-size: 0.8rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1px;
         }
-
         .metric span {
-            font-size: 1.4rem;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-            color: var(--text-color);
+            font-size: 1.6rem; font-weight: bold;
+            color: var(--primary-accent);
         }
-
-        .ruler {
+        
+        /* Dynamic Ruler */
+        .ruler-container {
             position: absolute;
-            left: 10px;
+            left: 0;
             top: 0;
             bottom: 0;
-            width: 50px;
-            border-right: 2px dashed rgba(0,0,0,0.3);
+            width: 80px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            background-color: rgba(0,0,0,0.2);
+            z-index: 2;
         }
         
         .ruler-mark {
             position: absolute;
             right: 0;
-            width: 10px;
+            width: 15px;
             height: 1px;
-            background: rgba(0,0,0,0.5);
+            background: rgba(255,255,255,0.5);
         }
+        
         .ruler-text {
             position: absolute;
-            right: 15px;
-            font-size: 10px;
+            right: 25px;
+            font-size: 12px;
+            font-family: 'Consolas', monospace;
             transform: translateY(-50%);
+            color: var(--text-light);
         }
 
     </style>
@@ -154,23 +170,23 @@
 <body>
 
     <header>
-        <h1>Free Fall Sim</h1>
+        <h1>⚛️ Free Fall Lab</h1>
         <div class="input-group">
-            <label for="heightInput">Height (m):</label>
-            <input type="number" id="heightInput" value="100" min="1" step="1">
+            <label for="heightInput">HEIGHT (m):</label>
+            <input type="number" id="heightInput" value="100" min="1" step="1" oninput="updateRulerOnly()">
         </div>
-        <button onclick="startSimulation()">Drop Ball</button>
-        <button class="reset" onclick="resetSimulation()">Reset</button>
+        <button onclick="startSimulation()">DROP BALL</button>
+        <button class="reset" onclick="resetSimulation()">RESET</button>
     </header>
 
     <div id="sim-container">
-        <div id="ruler" class="ruler"></div>
+        <div id="ruler" class="ruler-container"></div>
         
         <div id="ball"></div>
 
         <div id="dashboard">
             <div class="metric">
-                <label>Time</label>
+                <label>Time Elapsed</label>
                 <span id="disp-time">0.00 s</span>
             </div>
             <div class="metric">
@@ -192,8 +208,8 @@
         let isRunning = false;
         let startTime = null;
         let animationFrameId = null;
-        let initialHeight = 100; // meters
-        
+        let totalHeight = 100;
+
         // DOM Elements
         const ball = document.getElementById('ball');
         const container = document.getElementById('sim-container');
@@ -203,25 +219,41 @@
         const dTime = document.getElementById('disp-time');
         const dVel = document.getElementById('disp-velocity');
         const dHeight = document.getElementById('disp-height');
+        const ruler = document.getElementById('ruler');
+
+        function updateRulerOnly() {
+            // New function to update the ruler instantly without resetting the simulation state
+            const newHeight = parseFloat(heightInput.value);
+            if (newHeight > 0) {
+                // Temporarily update totalHeight for scaling calculation only
+                drawRuler(newHeight); 
+                dHeight.innerText = newHeight.toFixed(1) + " m";
+            }
+        }
 
         function init() {
-            // Set initial state
-            initialHeight = parseFloat(heightInput.value) || 100;
-            dHeight.innerText = initialHeight.toFixed(1) + " m";
+            // Get user input height
+            totalHeight = parseFloat(heightInput.value) || 100;
+            
+            // Reset Displays
+            dHeight.innerText = totalHeight.toFixed(1) + " m";
             dTime.innerText = "0.00 s";
             dVel.innerText = "0.0 m/s";
+            
+            // Reset Ball
             ball.style.top = '0px';
-            drawRuler(initialHeight);
+
+            // DRAW THE DYNAMIC RULER
+            drawRuler(totalHeight);
         }
 
         function startSimulation() {
             if (isRunning) return;
-            
-            initialHeight = parseFloat(heightInput.value);
-            if (initialHeight <= 0) {
-                alert("Please enter a height greater than 0.");
-                return;
-            }
+            totalHeight = parseFloat(heightInput.value);
+            if (totalHeight <= 0 || isNaN(totalHeight)) return alert("Height must be a valid number greater than 0.");
+
+            // Redraw ruler to ensure accuracy before starting
+            drawRuler(totalHeight);
 
             isRunning = true;
             startTime = performance.now();
@@ -235,99 +267,97 @@
         }
 
         function gameLoop(currentTime) {
-            // Calculate time elapsed in seconds (t)
             let t = (currentTime - startTime) / 1000;
 
-            // PHYSICS FORMULAS
-            // Distance fallen (d) = 1/2 * g * t^2
+            // Physics Calculations
             let distanceFallen = 0.5 * g * Math.pow(t, 2);
-            
-            // Current Velocity (v) = g * t
             let velocity = g * t;
+            let currentHeight = totalHeight - distanceFallen;
 
-            // Current Height = Total Height - Distance Fallen
-            let currentHeight = initialHeight - distanceFallen;
-
-            // --- Hitting the Ground Check ---
+            // Ground collision and stopping the loop
             if (currentHeight <= 0) {
                 currentHeight = 0;
-                distanceFallen = initialHeight;
-                // Recalculate final time based on exact height for display
-                // t_final = sqrt(2*h/g)
-                t = Math.sqrt((2 * initialHeight) / g);
+                distanceFallen = totalHeight;
+                // Calculate precise time/velocity at impact
+                t = Math.sqrt((2 * totalHeight) / g);
                 velocity = g * t;
-                isRunning = false; // Stop the loop
+                isRunning = false;
             }
 
-            // --- Update Visuals ---
-            
-            // 1. Update Dashboard
+            // Update Text Displays
             dTime.innerText = t.toFixed(2) + " s";
             dVel.innerText = velocity.toFixed(1) + " m/s";
             dHeight.innerText = currentHeight.toFixed(1) + " m";
 
-            // 2. Update Ball Position (Pixels)
-            // We need to map Meters to Pixels.
-            // The container height (minus ball size) represents the Initial Height.
-            const containerHeight = container.clientHeight - ball.clientHeight;
-            
-            // Scale factor: How many pixels represent 1 meter?
-            // pixelsPerMeter = containerHeight / initialHeight
-            const pixelsPerMeter = containerHeight / initialHeight;
+            // Update Ball Position (Visual Scaling)
+            const availableHeightPx = container.clientHeight - ball.clientHeight - parseFloat(getComputedStyle(container).borderBottomWidth);
+            const pixelsPerMeter = availableHeightPx / totalHeight;
 
-            // Ball Top Position (px) = Distance Fallen (m) * Scale
             const pixelTop = distanceFallen * pixelsPerMeter;
             ball.style.top = pixelTop + 'px';
 
-            // Continue loop if still running
             if (isRunning) {
                 animationFrameId = requestAnimationFrame(gameLoop);
             }
         }
 
-        // Helper to draw ruler markings dynamically
-        function drawRuler(totalMeters) {
-            const ruler = document.getElementById('ruler');
-            ruler.innerHTML = ''; // clear old marks
-            const containerHeight = container.clientHeight - ball.clientHeight;
+        // --- DYNAMIC RULER LOGIC ---
+        function getOptimalStep(height) {
+             if (height <= 20) return 1;
+             if (height <= 50) return 5;
+             if (height <= 100) return 10;
+             if (height <= 500) return 50;
+             if (height <= 2000) return 100;
+             return 500;
+        }
+
+        function drawRuler(heightMeters) {
+            ruler.innerHTML = ''; // Clear existing ruler
             
-            // Decide interval based on height to avoid clutter
-            let interval = 10;
-            if(totalMeters < 20) interval = 1;
-            else if(totalMeters < 100) interval = 10;
-            else interval = 50;
+            // Subtract the height of the ground border (15px) for accurate scaling
+            const groundBorderHeight = 15;
+            const availableHeightPx = container.clientHeight - ball.clientHeight - groundBorderHeight;
+            const pixelsPerMeter = availableHeightPx / heightMeters;
+            
+            // Ensure the height is a positive number
+            if (heightMeters <= 0 || isNaN(heightMeters)) return;
 
-            const pixelsPerMeter = containerHeight / totalMeters;
+            const step = getOptimalStep(heightMeters);
 
-            for(let m = 0; m <= totalMeters; m += interval) {
+            // Loop from 0 (ground) up to the total height
+            for (let h = 0; h <= heightMeters; h += step) {
+                
                 const mark = document.createElement('div');
                 mark.className = 'ruler-mark';
-                // Position based on meters from top (inverted because physics goes down)
-                // Actually, ruler usually shows height from ground.
-                // Let's draw height FROM GROUND logic.
-                // Height from ground = m. Position from top = (Total - m)
+                const label = document.createElement('div');
+                label.className = 'ruler-text';
                 
-                let topPos = (totalMeters - m) * pixelsPerMeter;
-                
-                // Adjust for visual centering of the ball
-                topPos += (ball.clientHeight / 2); 
+                // Set the label text
+                label.innerText = h + 'm';
 
-                mark.style.top = topPos + 'px';
-                
-                const text = document.createElement('div');
-                text.className = 'ruler-text';
-                text.innerText = m + 'm';
-                text.style.top = topPos + 'px';
+                // Calculate vertical position (pixels from TOP)
+                // metersFromTop = TotalHeight - CurrentTickHeight
+                const metersFromTop = heightMeters - h;
+                let topPosPx = metersFromTop * pixelsPerMeter;
+
+                // Adjust positioning:
+                // 1. Center the ruler tick vertically relative to the ball's center
+                topPosPx += (ball.clientHeight / 2);
+                // 2. Adjust for the ground border height (so 0m is exactly at the top of the ground)
+                topPosPx += groundBorderHeight; 
+
+                // Apply styles
+                mark.style.top = topPosPx + 'px';
+                label.style.top = topPosPx + 'px';
 
                 ruler.appendChild(mark);
-                ruler.appendChild(text);
+                ruler.appendChild(label);
             }
         }
 
-        // Initialize on load
+        // Initialize on load and re-initialize on window resize
         window.onload = init;
-        // Re-init on resize to fix scaling
-        window.onresize = init;
+        window.onresize = () => drawRuler(parseFloat(heightInput.value));
 
     </script>
 </body>
