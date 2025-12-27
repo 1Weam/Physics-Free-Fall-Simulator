@@ -3,95 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Fall Project ⚛️</title>
+    <title>Multi-Ball Free Fall Lab ⚛️</title>
     <style>
-        /* ================================
-   📱 Mobile & Tablet Responsiveness
-   (ADD ONLY – no edits)
-================================ */
-
-@media (max-width: 1024px) {
-    .main-controls button {
-        font-size: 0.9rem;
-        padding: 10px 18px;
-    }
-
-    .ball-card {
-        min-width: 140px;
-    }
-
-    #history-log {
-        min-width: 200px;
-    }
-}
-
-@media (max-width: 768px) {
-    body {
-        font-size: 14px;
-    }
-
-    header {
-        padding: 10px;
-    }
-
-    .main-controls {
-        gap: 10px;
-    }
-
-    .main-controls button {
-        width: 100%;
-        max-width: 260px;
-    }
-
-    #ball-settings-container {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .ball-card {
-        width: 90%;
-        max-width: 350px;
-    }
-
-    #main-content {
-        flex-direction: column;
-    }
-
-    #sim-container {
-        min-height: 300px;
-    }
-
-    #history-log {
-        width: 100%;
-        max-height: 180px;
-    }
-}
-
-@media (max-width: 480px) {
-    h1 {
-        font-size: 1rem;
-        text-align: center;
-    }
-
-    .student-ids {
-        font-size: 0.9rem;
-    }
-
-    .ball-entity {
-        width: 24px;
-        height: 24px;
-    }
-
-    select,
-    input[type="number"] {
-        font-size: 0.75rem;
-    }
-
-    button {
-        font-size: 0.85rem;
-    }
-}
-
         /* --- 1. Base Styling & Variables --- */
         :root {
             --dark-bg: #121212;
@@ -209,7 +122,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            min-width: 160px;
+            min-width: 140px;
             position: relative;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             border-left: 4px solid transparent; /* Colored by JS */
@@ -222,17 +135,6 @@
 
         .input-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; }
         
-        /* Select Dropdown Styling */
-        select {
-            background-color: #121212;
-            color: #fff;
-            border: 1px solid #555;
-            border-radius: 3px;
-            padding: 3px;
-            font-size: 0.8rem;
-            width: 100px;
-        }
-
         input[type="number"] {
             width: 60px;
             padding: 4px;
@@ -255,9 +157,6 @@
             border-radius: 3px;
         }
         .live-val { color: white; font-weight: bold; }
-        
-        /* Utility to hide velocity input */
-        .hidden { display: none !important; }
 
         /* --- Simulation Area --- */
         #main-content {
@@ -284,7 +183,7 @@
 
         .ball-entity {
             position: absolute;
-            left: 50%; 
+            left: 50%; /* Will be adjusted dynamically if multiple balls */
             transform: translateX(-50%);
             width: 30px;
             height: 30px;
@@ -358,12 +257,11 @@
             </div>
 
         <div id="history-log">
-            <h3>Result Log</h3>
+            <h3>Result Log (Free Fall)</h3>
             <ul id="history-list">
                 <li style="color: #666; font-style: italic;">Results will appear here after drop.</li>
             </ul>
         </div>
-        
     </div>
 
     <script>
@@ -374,28 +272,27 @@
         const ruler = document.getElementById('ruler');
         const historyList = document.getElementById('history-list');
 
-        let balls = []; 
+        let balls = []; // Array to store Ball objects
         let isSimulating = false;
         let animationId;
         let simulationStartTime;
         let nextBallId = 1;
 
+        // Default colors for new balls
         const defaultColors = ['#00e5ff', '#ff00ff', '#ffff00', '#00ff00', '#ff8000'];
 
         // --- 2. BALL CLASS ---
         class Ball {
             constructor(id) {
                 this.id = id;
-                this.height = 100; 
-                this.initialVelocity = 0; 
-                this.isFreeFall = true; // Default to free fall
+                this.height = 100; // Default height
                 this.color = defaultColors[(id - 1) % defaultColors.length];
-                this.element = null; 
-                this.cardElement = null; 
+                this.element = null; // The DOM element in sim
+                this.cardElement = null; // The DOM control card
                 
-                // Physics State
+                // Physics State (Pure Free Fall: Vi is always 0)
                 this.currentHeight = this.height;
-                this.velocity = 0;
+                this.velocity = 0; // Starts from rest
                 this.timeElapsed = 0;
                 this.finished = false;
 
@@ -415,30 +312,14 @@
                         <span class="ball-title">Ball ${this.id}</span>
                         <button class="remove-ball" onclick="removeBall(${this.id})">×</button>
                     </div>
-                    
                     <div class="input-row">
                         <label>Height (m)</label>
                         <input type="number" value="${this.height}" min="1" step="1" onchange="updateBallSettings(${this.id}, 'height', this.value)">
                     </div>
-
-                    <div class="input-row">
-                        <label>Mode</label>
-                        <select onchange="updateBallSettings(${this.id}, 'mode', this.value)">
-                            <option value="freefall">Free Fall</option>
-                            <option value="velocity">Initial Velocity</option>
-                        </select>
-                    </div>
-
-                    <div class="input-row hidden" id="v0-row-${this.id}" title="Positive = Down, Negative = Up">
-                        <label>v0 (m/s)</label>
-                        <input type="number" id="input-v0-${this.id}" value="0" step="1" onchange="updateBallSettings(${this.id}, 'v0', this.value)">
-                    </div>
-
                     <div class="input-row">
                         <label>Color</label>
                         <input type="color" value="${this.color}" onchange="updateBallSettings(${this.id}, 'color', this.value)">
                     </div>
-                    
                     <div class="live-stats">
                         H: <span id="stat-h-${this.id}" class="live-val">${this.height}</span>m <br>
                         V: <span id="stat-v-${this.id}" class="live-val">0.0</span>m/s
@@ -448,6 +329,7 @@
                 this.cardElement = card;
             }
 
+            // Create the actual Ball Div in the simulation
             createDOM() {
                 const el = document.createElement('div');
                 el.className = 'ball-entity';
@@ -458,25 +340,27 @@
             }
 
             updateAppearance(el = this.element) {
+                // Radial gradient for 3D effect
                 el.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${this.color})`;
                 this.cardElement.style.borderLeftColor = this.color;
             }
 
             resetPhysics() {
                 this.currentHeight = this.height;
-                this.velocity = this.initialVelocity; 
+                this.velocity = 0; // Reset to 0 (Vi = 0)
                 this.timeElapsed = 0;
                 this.finished = false;
                 
+                // Update stats UI
                 document.getElementById(`stat-h-${this.id}`).innerText = this.height.toFixed(1);
-                document.getElementById(`stat-v-${this.id}`).innerText = this.initialVelocity.toFixed(1);
+                document.getElementById(`stat-v-${this.id}`).innerText = "0.0";
             }
         }
 
         // --- 3. MANAGER FUNCTIONS ---
 
         function addNewBall() {
-            if(isSimulating) return; 
+            if(isSimulating) return; // Prevent adding during drop
             const b = new Ball(nextBallId++);
             balls.push(b);
             distributeBallsHorizontal();
@@ -485,9 +369,13 @@
 
         function removeBall(id) {
             if(isSimulating) return;
+            // Remove from array
             balls = balls.filter(b => b.id !== id);
+            
+            // Remove DOM elements
             document.getElementById(`card-${id}`).remove();
             document.getElementById(`ball-${id}`).remove();
+            
             distributeBallsHorizontal();
             updateRuler();
         }
@@ -500,51 +388,29 @@
                 b.height = parseFloat(value);
                 b.currentHeight = b.height;
                 document.getElementById(`stat-h-${id}`).innerText = b.height.toFixed(1);
-                updateRuler(); 
-            } 
-            else if (type === 'mode') {
-                const v0Row = document.getElementById(`v0-row-${id}`);
-                const v0Input = document.getElementById(`input-v0-${id}`);
-
-                if (value === 'freefall') {
-                    // Hide input and reset speed to 0
-                    v0Row.classList.add('hidden');
-                    b.initialVelocity = 0;
-                    b.isFreeFall = true;
-                    // Reset the actual input box value to 0 for clarity
-                    v0Input.value = 0;
-                } else {
-                    // Show input
-                    v0Row.classList.remove('hidden');
-                    b.isFreeFall = false;
-                    b.initialVelocity = parseFloat(v0Input.value);
-                }
-                // Update text display
-                document.getElementById(`stat-v-${id}`).innerText = b.initialVelocity.toFixed(1);
-            }
-            else if (type === 'v0') {
-                b.initialVelocity = parseFloat(value);
-                b.velocity = b.initialVelocity;
-                document.getElementById(`stat-v-${id}`).innerText = b.initialVelocity.toFixed(1);
-            } 
-            else if (type === 'color') {
+                updateRuler(); // Height changed, ruler might need scaling
+            } else if (type === 'color') {
                 b.color = value;
                 b.updateAppearance();
             }
-            updateBallVisuals(b, b.height, getMaxHeight());
         }
 
+        // Evenly space balls horizontally
         function distributeBallsHorizontal() {
             const count = balls.length;
             if (count === 0) return;
+            
+            // Percentage width for each section
             const segment = 100 / count; 
+            
             balls.forEach((b, index) => {
+                // Center of the segment
                 const leftPos = (index * segment) + (segment / 2);
                 b.element.style.left = `${leftPos}%`;
             });
         }
 
-        // --- 4. PHYSICS LOOP ---
+        // --- 4. PHYSICS LOOP (PURE FREE FALL) ---
 
         function startAll() {
             if (balls.length === 0) return alert("Add a ball first!");
@@ -554,7 +420,7 @@
             simulationStartTime = performance.now();
             
             // Lock inputs
-            document.querySelectorAll('input, select, .btn-add, .remove-ball').forEach(el => el.disabled = true);
+            document.querySelectorAll('input, .btn-add, .remove-ball').forEach(el => el.disabled = true);
 
             requestAnimationFrame(gameLoop);
         }
@@ -565,53 +431,55 @@
             
             balls.forEach(b => {
                 b.resetPhysics();
-                updateBallVisuals(b, b.height, getMaxHeight()); 
+                updateBallVisuals(b, 0, getMaxHeight()); // Reset position to top
             });
 
             // Unlock inputs
-            document.querySelectorAll('input, select, .btn-add, .remove-ball').forEach(el => el.disabled = false);
+            document.querySelectorAll('input, .btn-add, .remove-ball').forEach(el => el.disabled = false);
         }
 
         function gameLoop(currentTime) {
-            let t = (currentTime - simulationStartTime) / 1000; 
+            let t = (currentTime - simulationStartTime) / 1000; // Total time elapsed (s)
             
             let allFinished = true;
             const maxHeight = getMaxHeight();
 
             balls.forEach(b => {
                 if (!b.finished) {
-                    // d = v0*t + 0.5*g*t^2
-                    let dropDist = (b.initialVelocity * t) + (0.5 * g * Math.pow(t, 2));
-                    b.currentHeight = b.height - dropDist;
+                    // --- PHYSICS: FREE FALL (Vi = 0) ---
+                    // Distance = 0.5 * g * t^2
+                    // Velocity = g * t
                     
-                    b.velocity = b.initialVelocity + (g * t);
+                    let dropDist = 0.5 * g * Math.pow(t, 2);
+                    
+                    b.currentHeight = b.height - dropDist;
+                    b.velocity = g * t;
 
+                    // Collision Check
                     if (b.currentHeight <= 0) {
                         b.currentHeight = 0;
                         b.finished = true;
                         
-                        // Exact impact calculation
-                        let A = 0.5 * g;
-                        let B = b.initialVelocity;
-                        let C = -b.height;
-                        
-                        let discriminant = Math.pow(B, 2) - (4 * A * C);
-                        let finalT = (-B + Math.sqrt(discriminant)) / (2 * A);
-                        
-                        let finalV = b.initialVelocity + (g * finalT);
+                        // Exact impact calculation for logs
+                        // t = sqrt(2h/g)
+                        let finalT = Math.sqrt((2 * b.height) / g);
+                        // Vf = g * t
+                        let finalV = g * finalT;
                         
                         b.velocity = finalV;
                         b.timeElapsed = finalT;
                         logResult(b);
                     } else {
                         b.timeElapsed = t;
-                        allFinished = false; 
+                        allFinished = false; // Still one falling
                     }
 
+                    // Update Live Stats
                     document.getElementById(`stat-h-${b.id}`).innerText = b.currentHeight.toFixed(1);
                     document.getElementById(`stat-v-${b.id}`).innerText = b.velocity.toFixed(1);
                 }
                 
+                // Update DOM position
                 updateBallVisuals(b, b.currentHeight, maxHeight);
             });
 
@@ -619,19 +487,25 @@
                 animationId = requestAnimationFrame(gameLoop);
             } else {
                 isSimulating = false;
-                document.querySelectorAll('input, select, .btn-add, .remove-ball').forEach(el => el.disabled = false);
+                document.querySelectorAll('input, .btn-add, .remove-ball').forEach(el => el.disabled = false);
             }
         }
 
+        // Maps physics height to pixels based on the "Tallest" ball (Zoom/Scale)
         function updateBallVisuals(ballObj, currentH, maxH) {
             const containerH = container.clientHeight;
-            const borderBottom = 15; 
+            const borderBottom = 15; // Ground thickness
             const ballSize = 30; 
-            const availablePx = containerH - ballSize - borderBottom;
-            const safeMaxH = maxH > 0 ? maxH : 1;
-            const pxPerMeter = availablePx / safeMaxH;
             
-            const metersFromTop = safeMaxH - currentH;
+            // Available vertical space for movement
+            const availablePx = containerH - ballSize - borderBottom;
+            
+            // Pixels per meter (Scaling Factor)
+            const pxPerMeter = availablePx / maxH;
+            
+            // How far from top?
+            // If ball is at maxH, top is 0. If at 0, top is availablePx.
+            const metersFromTop = maxH - currentH;
             let topPx = metersFromTop * pxPerMeter;
 
             ballObj.element.style.top = `${topPx}px`;
@@ -647,6 +521,7 @@
         function updateRuler() {
             const maxH = getMaxHeight();
             drawRuler(maxH);
+            // Also update ball positions immediately to reflect new scale
             balls.forEach(b => updateBallVisuals(b, b.currentHeight, maxH));
         }
 
@@ -656,8 +531,9 @@
             const borderBottom = 15;
             const ballSize = 30;
             const availablePx = containerH - ballSize - borderBottom;
-            const pxPerMeter = availablePx / (heightMeters > 0 ? heightMeters : 1);
+            const pxPerMeter = availablePx / heightMeters;
 
+            // Determine step size for ticks
             let step = 1;
             if (heightMeters > 20) step = 5;
             if (heightMeters > 50) step = 10;
@@ -671,6 +547,10 @@
                 label.innerText = h + 'm';
 
                 const metersFromTop = heightMeters - h;
+                // Add half ball size so 0m aligns with bottom of ball, max aligns with top of ball
+                let topPos = (metersFromTop * pxPerMeter) + (ballSize / 2); 
+
+                // Visual alignment: 0m mark at bottom of ball travel
                 let visualTop = (metersFromTop * pxPerMeter) + ballSize; 
 
                 mark.style.top = visualTop + 'px';
@@ -682,18 +562,16 @@
         }
 
         function logResult(ballObj) {
+            // Clear placeholder
             const list = document.getElementById('history-list');
             if (list.children.length > 0 && list.children[0].innerText.includes('Results')) {
                 list.innerHTML = '';
             }
 
-            const typeStr = ballObj.isFreeFall ? "Free Fall" : `Throw (v0=${ballObj.initialVelocity})`;
-
             const li = document.createElement('li');
             li.innerHTML = `
                 <span style="color:${ballObj.color}; font-weight:bold;">Ball ${ballObj.id}</span> | 
-                <b>${typeStr}</b><br>
-                Drop: <b>${ballObj.height}m</b> | 
+                Drop: <b>${ballObj.height}m</b> <br>
                 Time: <b>${ballObj.timeElapsed.toFixed(3)}s</b> | 
                 Final V: <b>${ballObj.velocity.toFixed(2)}m/s</b>
             `;
@@ -702,11 +580,10 @@
 
         // --- INIT ---
         window.onload = () => {
-            addNewBall(); 
+            addNewBall(); // Start with 1 ball
             window.addEventListener('resize', updateRuler);
         };
 
     </script>
 </body>
 </html>
-
