@@ -1,589 +1,711 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-Ball Free Fall Lab ⚛️</title>
-    <style>
-        /* --- 1. Base Styling & Variables --- */
-        :root {
-            --dark-bg: #121212;
-            --dark-surface: #1e1e1e;
-            --card-bg: #2d2d30;
-            --primary-accent: #00e5ff; /* Cyan Neon */
-            --secondary-accent: #ff00ff; /* Pink Neon */
-            --text-light: #f0f0f0;
-            --text-muted: #9a9a9a;
-            --ground-color: #4CAF50;
-        }
+<style>
+/* ================================
+   📱 Mobile & Tablet Responsiveness
+   (ADD ONLY – no edits)
+================================ */
 
-        body {
-            font-family: 'Consolas', 'Courier New', monospace;
-            background-color: var(--dark-bg);
-            color: var(--text-light);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-            overflow-x: hidden;
-            width: 100%;
-        }
+@media (max-width: 1024px) {
+.main-controls button {
+font-size: 0.9rem;
+padding: 10px 18px;
+}
 
-        /* --- Header & IDs --- */
-        header {
-            background: var(--dark-surface);
-            width: 100%;
-            padding: 15px 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            z-index: 10;
-        }
+.ball-card {
+min-width: 140px;
+}
 
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            max-width: 1200px;
-            flex-wrap: wrap;
-        }
+#history-log {
+min-width: 200px;
+}
+}
 
-        h1 { margin: 0; font-size: 1.5rem; color: #fff; }
+@media (max-width: 768px) {
+body {
+font-size: 14px;
+}
 
-        /* NEON IDs STYLING */
-        .student-ids {
-            font-size: 1.5rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-align: center;
-        }
-        
-        .id-cyan {
-            color: var(--primary-accent);
-            text-shadow: 0 0 5px var(--primary-accent), 0 0 10px var(--primary-accent), 0 0 20px var(--primary-accent);
-            margin: 0 10px;
-        }
-        
-        .id-pink {
-            color: var(--secondary-accent);
-            text-shadow: 0 0 5px var(--secondary-accent), 0 0 10px var(--secondary-accent), 0 0 20px var(--secondary-accent);
-            margin: 0 10px;
-        }
+header {
+padding: 10px;
+}
 
-        /* --- Controls Area --- */
-        .main-controls {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+.main-controls {
+gap: 10px;
+}
 
-        button {
-            padding: 10px 24px;
-            font-weight: bold;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s;
-            text-transform: uppercase;
-        }
+.main-controls button {
+width: 100%;
+max-width: 260px;
+}
 
-        .btn-add { background-color: #444; color: #fff; border: 1px solid #777; }
-        .btn-add:hover { background-color: #666; }
+#ball-settings-container {
+flex-direction: column;
+align-items: center;
+}
 
-        .btn-start { background-color: var(--primary-accent); color: #000; box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
-        .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); }
+.ball-card {
+width: 90%;
+max-width: 350px;
+}
 
-        .btn-reset { background-color: #d32f2f; color: white; }
+#main-content {
+flex-direction: column;
+}
 
-        /* --- Ball Settings Grid --- */
-        #ball-settings-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            width: 95%;
-            max-width: 1200px;
-            justify-content: center;
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
+#sim-container {
+min-height: 300px;
+}
 
-        .ball-card {
-            background: var(--card-bg);
-            border: 1px solid #444;
-            padding: 10px;
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-width: 140px;
-            position: relative;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            border-left: 4px solid transparent; /* Colored by JS */
-        }
+#history-log {
+width: 100%;
+max-height: 180px;
+}
+}
 
-        .card-header { display: flex; justify-content: space-between; align-items: center; }
-        .ball-title { font-weight: bold; font-size: 0.9rem; }
-        .remove-ball { background: none; color: #ff5252; font-size: 1.2rem; padding: 0; width: auto; }
-        .remove-ball:hover { background: none; color: #ff0000; transform: scale(1.2); }
+@media (max-width: 480px) {
+h1 {
+font-size: 1rem;
+text-align: center;
+}
 
-        .input-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; }
-        
-        input[type="number"] {
-            width: 60px;
-            padding: 4px;
-            background: #121212;
-            border: 1px solid #555;
-            color: white;
-            border-radius: 3px;
-        }
+.student-ids {
+font-size: 0.9rem;
+}
 
-        input[type="color"] {
-            background: none; border: none; width: 25px; height: 25px; padding: 0; cursor: pointer;
-        }
+.ball-entity {
+width: 24px;
+height: 24px;
+}
 
-        .live-stats {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 5px;
-            background: rgba(0,0,0,0.2);
-            padding: 4px;
-            border-radius: 3px;
-        }
-        .live-val { color: white; font-weight: bold; }
+select,
+input[type="number"] {
+font-size: 0.75rem;
+}
 
-        /* --- Simulation Area --- */
-        #main-content {
-            display: flex;
-            width: 95%;
-            max-width: 1200px;
-            flex-grow: 1;
-            margin: 10px auto;
-            gap: 20px;
-            min-height: 0; 
-        }
-        
-        #sim-container {
-            position: relative;
-            flex-grow: 1;
-            min-height: 400px;
-            background: linear-gradient(to bottom, #101820 0%, #293845 100%);
-            border: 2px solid #555;
-            border-bottom: 15px solid var(--ground-color);
-            overflow: hidden;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        }
+button {
+font-size: 0.85rem;
+}
+}
 
-        .ball-entity {
-            position: absolute;
-            left: 50%; /* Will be adjusted dynamically if multiple balls */
-            transform: translateX(-50%);
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-            z-index: 5;
-        }
+/* --- 1. Base Styling & Variables --- */
+:root {
+--dark-bg: #121212;
+--dark-surface: #1e1e1e;
+--card-bg: #2d2d30;
+--primary-accent: #00e5ff; /* Cyan Neon */
+--secondary-accent: #ff00ff; /* Pink Neon */
+--text-light: #f0f0f0;
+--text-muted: #9a9a9a;
+--ground-color: #4CAF50;
+}
 
-        /* Ruler Styling */
-        .ruler-container {
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 60px;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            background-color: rgba(0,0,0,0.2);
-            z-index: 2;
-        }
-        .ruler-mark { position: absolute; right: 0; width: 10px; height: 1px; background: rgba(255,255,255,0.5); }
-        .ruler-text { position: absolute; right: 15px; font-size: 10px; transform: translateY(-50%); color: var(--text-light); }
+body {
+font-family: 'Consolas', 'Courier New', monospace;
+background-color: var(--dark-bg);
+color: var(--text-light);
+margin: 0;
+display: flex;
+flex-direction: column;
+align-items: center;
+height: 100vh;
+overflow-x: hidden;
+width: 100%;
+}
+
+/* --- Header & IDs --- */
+header {
+background: var(--dark-surface);
+width: 100%;
+padding: 15px 20px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 15px;
+z-index: 10;
+}
+
+.header-top {
+display: flex;
+justify-content: space-between;
+align-items: center;
+width: 100%;
+max-width: 1200px;
+flex-wrap: wrap;
+}
+
+h1 { margin: 0; font-size: 1.5rem; color: #fff; }
+
+/* NEON IDs STYLING */
+.student-ids {
+font-size: 1.5rem;
+font-weight: bold;
+text-transform: uppercase;
+letter-spacing: 2px;
+text-align: center;
+}
+
+.id-cyan {
+color: var(--primary-accent);
+text-shadow: 0 0 5px var(--primary-accent), 0 0 10px var(--primary-accent), 0 0 20px var(--primary-accent);
+margin: 0 10px;
+}
+
+.id-pink {
+color: var(--secondary-accent);
+text-shadow: 0 0 5px var(--secondary-accent), 0 0 10px var(--secondary-accent), 0 0 20px var(--secondary-accent);
+margin: 0 10px;
+}
+
+/* --- Controls Area --- */
+.main-controls {
+display: flex;
+gap: 15px;
+flex-wrap: wrap;
+justify-content: center;
+}
+
+button {
+padding: 10px 24px;
+font-weight: bold;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+font-size: 1rem;
+transition: all 0.2s;
+text-transform: uppercase;
+}
+
+.btn-add { background-color: #444; color: #fff; border: 1px solid #777; }
+.btn-add:hover { background-color: #666; }
+
+.btn-start { background-color: var(--primary-accent); color: #000; box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+.btn-start:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); }
+
+.btn-reset { background-color: #d32f2f; color: white; }
+
+/* --- Ball Settings Grid --- */
+#ball-settings-container {
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+width: 95%;
+max-width: 1200px;
+justify-content: center;
+margin-top: 10px;
+margin-bottom: 10px;
+}
+
+.ball-card {
+background: var(--card-bg);
+border: 1px solid #444;
+padding: 10px;
+border-radius: 6px;
+display: flex;
+flex-direction: column;
+gap: 8px;
+min-width: 160px;
+position: relative;
+box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+border-left: 4px solid transparent; /* Colored by JS */
+}
+
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.ball-title { font-weight: bold; font-size: 0.9rem; }
+.remove-ball { background: none; color: #ff5252; font-size: 1.2rem; padding: 0; width: auto; }
+.remove-ball:hover { background: none; color: #ff0000; transform: scale(1.2); }
+
+.input-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; }
+
+/* Select Dropdown Styling */
+select {
+background-color: #121212;
+color: #fff;
+border: 1px solid #555;
+border-radius: 3px;
+padding: 3px;
+font-size: 0.8rem;
+width: 100px;
+}
+
+input[type="number"] {
+width: 60px;
+padding: 4px;
+background: #121212;
+border: 1px solid #555;
+color: white;
+border-radius: 3px;
+}
+
+input[type="color"] {
+background: none; border: none; width: 25px; height: 25px; padding: 0; cursor: pointer;
+}
+
+.live-stats {
+font-size: 0.75rem;
+color: var(--text-muted);
+margin-top: 5px;
+background: rgba(0,0,0,0.2);
+padding: 4px;
+border-radius: 3px;
+}
+.live-val { color: white; font-weight: bold; }
+
+/* Utility to hide velocity input */
+.hidden { display: none !important; }
+
+/* --- Simulation Area --- */
+#main-content {
+display: flex;
+width: 95%;
+max-width: 1200px;
+flex-grow: 1;
+margin: 10px auto;
+gap: 20px;
+min-height: 0; 
+}
+
+#sim-container {
+position: relative;
+flex-grow: 1;
+min-height: 400px;
+background: linear-gradient(to bottom, #101820 0%, #293845 100%);
+border: 2px solid #555;
+border-bottom: 15px solid var(--ground-color);
+overflow: hidden;
+border-radius: 8px;
+box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.ball-entity {
+position: absolute;
+left: 50%; 
+transform: translateX(-50%);
+width: 30px;
+height: 30px;
+border-radius: 50%;
+box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+z-index: 5;
+}
+
+/* Ruler Styling */
+.ruler-container {
+position: absolute;
+left: 0; top: 0; bottom: 0;
+width: 60px;
+border-right: 1px solid rgba(255,255,255,0.1);
+background-color: rgba(0,0,0,0.2);
+z-index: 2;
+}
+.ruler-mark { position: absolute; right: 0; width: 10px; height: 1px; background: rgba(255,255,255,0.5); }
+.ruler-text { position: absolute; right: 15px; font-size: 10px; transform: translateY(-50%); color: var(--text-light); }
 
 
-        /* --- History Log --- */
-        #history-log {
-            flex-basis: 250px;
-            min-width: 250px;
-            background: var(--dark-surface);
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            overflow-y: auto;
-            border: 1px solid #333;
-        }
+/* --- History Log --- */
+#history-log {
+flex-basis: 250px;
+min-width: 250px;
+background: var(--dark-surface);
+border-radius: 8px;
+padding: 15px;
+box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+overflow-y: auto;
+border: 1px solid #333;
+}
 
-        #history-log h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px; font-size: 1rem; }
-        
-        #history-list { list-style: none; padding: 0; }
-        #history-list li { padding: 8px 0; border-bottom: 1px dashed #3a3a3a; font-size: 0.85rem; }
+#history-log h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px; font-size: 1rem; }
 
-        /* Mobile tweaks */
-        @media screen and (max-width: 800px) {
-            #main-content { flex-direction: column; }
-            #history-log { max-height: 200px; flex-basis: auto; }
-            .student-ids { font-size: 1rem; }
-            h1 { font-size: 1.2rem; }
-        }
-    </style>
+#history-list { list-style: none; padding: 0; }
+#history-list li { padding: 8px 0; border-bottom: 1px dashed #3a3a3a; font-size: 0.85rem; }
+
+/* Mobile tweaks */
+@media screen and (max-width: 800px) {
+#main-content { flex-direction: column; }
+#history-log { max-height: 200px; flex-basis: auto; }
+.student-ids { font-size: 1rem; }
+h1 { font-size: 1.2rem; }
+}
+</style>
 </head>
 <body>
 
-    <header>
-        <div class="header-top">
-            <h1>⚛️ Multi-Ball Free Fall</h1>
-            <div class="student-ids">
-                <span class="id-cyan">ID: 25-103224</span>
-                <span class="id-pink">ID: 25-102713</span>
-            </div>
-        </div>
+<header>
+<div class="header-top">
+<h1>⚛️ Multi-Ball Free Fall</h1>
+<div class="student-ids">
+<span class="id-cyan">ID: 25-103224</span>
+<span class="id-pink">ID: 25-102713</span>
+</div>
+</div>
 
-        <div class="main-controls">
-            <button class="btn-add" onclick="addNewBall()">+ Add Ball</button>
-            <button class="btn-start" onclick="startAll()">DROP ALL</button>
-            <button class="btn-reset" onclick="resetAll()">RESET</button>
-        </div>
-    </header>
+<div class="main-controls">
+<button class="btn-add" onclick="addNewBall()">+ Add Ball</button>
+<button class="btn-start" onclick="startAll()">DROP ALL</button>
+<button class="btn-reset" onclick="resetAll()">RESET</button>
+</div>
+</header>
 
-    <div id="ball-settings-container"></div>
-    
-    <div id="main-content">
-        <div id="sim-container">
-            <div id="ruler" class="ruler-container"></div>
-            </div>
+<div id="ball-settings-container"></div>
 
-        <div id="history-log">
-            <h3>Result Log (Free Fall)</h3>
-            <ul id="history-list">
-                <li style="color: #666; font-style: italic;">Results will appear here after drop.</li>
-            </ul>
-        </div>
-    </div>
+<div id="main-content">
+<div id="sim-container">
+<div id="ruler" class="ruler-container"></div>
+</div>
 
-    <script>
-        // --- 1. CONFIGURATION & STATE ---
-        const g = 9.81; 
-        const container = document.getElementById('sim-container');
-        const settingsContainer = document.getElementById('ball-settings-container');
-        const ruler = document.getElementById('ruler');
-        const historyList = document.getElementById('history-list');
+<div id="history-log">
+<h3>Result Log</h3>
+<ul id="history-list">
+<li style="color: #666; font-style: italic;">Results will appear here after drop.</li>
+</ul>
+</div>
 
-        let balls = []; // Array to store Ball objects
-        let isSimulating = false;
-        let animationId;
-        let simulationStartTime;
-        let nextBallId = 1;
+</div>
 
-        // Default colors for new balls
-        const defaultColors = ['#00e5ff', '#ff00ff', '#ffff00', '#00ff00', '#ff8000'];
+<script>
+// --- 1. CONFIGURATION & STATE ---
+const g = 9.81; 
+const container = document.getElementById('sim-container');
+const settingsContainer = document.getElementById('ball-settings-container');
+const ruler = document.getElementById('ruler');
+const historyList = document.getElementById('history-list');
 
-        // --- 2. BALL CLASS ---
-        class Ball {
-            constructor(id) {
-                this.id = id;
-                this.height = 100; // Default height
-                this.color = defaultColors[(id - 1) % defaultColors.length];
-                this.element = null; // The DOM element in sim
-                this.cardElement = null; // The DOM control card
-                
-                // Physics State (Pure Free Fall: Vi is always 0)
-                this.currentHeight = this.height;
-                this.velocity = 0; // Starts from rest
-                this.timeElapsed = 0;
-                this.finished = false;
+let balls = []; 
+let isSimulating = false;
+let animationId;
+let simulationStartTime;
+let nextBallId = 1;
 
-                this.createControlCard();
-                this.createDOM();
-            }
+const defaultColors = ['#00e5ff', '#ff00ff', '#ffff00', '#00ff00', '#ff8000'];
 
-            // Create the Settings Card UI
-            createControlCard() {
-                const card = document.createElement('div');
-                card.className = 'ball-card';
-                card.id = `card-${this.id}`;
-                card.style.borderLeftColor = this.color;
+// --- 2. BALL CLASS ---
+class Ball {
+constructor(id) {
+this.id = id;
+this.height = 100; 
+this.initialVelocity = 0; 
+this.isFreeFall = true; // Default to free fall
+this.color = defaultColors[(id - 1) % defaultColors.length];
+this.element = null; 
+this.cardElement = null; 
 
-                card.innerHTML = `
+// Physics State
+this.currentHeight = this.height;
+this.velocity = 0;
+this.timeElapsed = 0;
+this.finished = false;
+
+this.createControlCard();
+this.createDOM();
+}
+
+// Create the Settings Card UI
+createControlCard() {
+const card = document.createElement('div');
+card.className = 'ball-card';
+card.id = `card-${this.id}`;
+card.style.borderLeftColor = this.color;
+
+card.innerHTML = `
                     <div class="card-header">
                         <span class="ball-title">Ball ${this.id}</span>
                         <button class="remove-ball" onclick="removeBall(${this.id})">×</button>
                     </div>
+                    
                     <div class="input-row">
                         <label>Height (m)</label>
                         <input type="number" value="${this.height}" min="1" step="1" onchange="updateBallSettings(${this.id}, 'height', this.value)">
                     </div>
+
+                    <div class="input-row">
+                        <label>Mode</label>
+                        <select onchange="updateBallSettings(${this.id}, 'mode', this.value)">
+                            <option value="freefall">Free Fall</option>
+                            <option value="velocity">Thrown Ball</option>
+                        </select>
+                    </div>
+
+                    <div class="input-row hidden" id="v0-row-${this.id}" title="Positive = Down, Negative = Up">
+                        <label>v0 (m/s)</label>
+                        <input type="number" id="input-v0-${this.id}" value="0" step="1" onchange="updateBallSettings(${this.id}, 'v0', this.value)">
+                    </div>
+
                     <div class="input-row">
                         <label>Color</label>
                         <input type="color" value="${this.color}" onchange="updateBallSettings(${this.id}, 'color', this.value)">
                     </div>
+                    
                     <div class="live-stats">
                         H: <span id="stat-h-${this.id}" class="live-val">${this.height}</span>m <br>
                         V: <span id="stat-v-${this.id}" class="live-val">0.0</span>m/s
                     </div>
                 `;
-                settingsContainer.appendChild(card);
-                this.cardElement = card;
-            }
+settingsContainer.appendChild(card);
+this.cardElement = card;
+}
 
-            // Create the actual Ball Div in the simulation
-            createDOM() {
-                const el = document.createElement('div');
-                el.className = 'ball-entity';
-                el.id = `ball-${this.id}`;
-                this.updateAppearance(el);
-                container.appendChild(el);
-                this.element = el;
-            }
+createDOM() {
+const el = document.createElement('div');
+el.className = 'ball-entity';
+el.id = `ball-${this.id}`;
+this.updateAppearance(el);
+container.appendChild(el);
+this.element = el;
+}
 
-            updateAppearance(el = this.element) {
-                // Radial gradient for 3D effect
-                el.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${this.color})`;
-                this.cardElement.style.borderLeftColor = this.color;
-            }
+updateAppearance(el = this.element) {
+el.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${this.color})`;
+this.cardElement.style.borderLeftColor = this.color;
+}
 
-            resetPhysics() {
-                this.currentHeight = this.height;
-                this.velocity = 0; // Reset to 0 (Vi = 0)
-                this.timeElapsed = 0;
-                this.finished = false;
-                
-                // Update stats UI
-                document.getElementById(`stat-h-${this.id}`).innerText = this.height.toFixed(1);
-                document.getElementById(`stat-v-${this.id}`).innerText = "0.0";
-            }
-        }
+resetPhysics() {
+this.currentHeight = this.height;
+this.velocity = this.initialVelocity; 
+this.timeElapsed = 0;
+this.finished = false;
 
-        // --- 3. MANAGER FUNCTIONS ---
+document.getElementById(`stat-h-${this.id}`).innerText = this.height.toFixed(1);
+document.getElementById(`stat-v-${this.id}`).innerText = this.initialVelocity.toFixed(1);
+}
+}
 
-        function addNewBall() {
-            if(isSimulating) return; // Prevent adding during drop
-            const b = new Ball(nextBallId++);
-            balls.push(b);
-            distributeBallsHorizontal();
-            updateRuler();
-        }
+// --- 3. MANAGER FUNCTIONS ---
 
-        function removeBall(id) {
-            if(isSimulating) return;
-            // Remove from array
-            balls = balls.filter(b => b.id !== id);
-            
-            // Remove DOM elements
-            document.getElementById(`card-${id}`).remove();
-            document.getElementById(`ball-${id}`).remove();
-            
-            distributeBallsHorizontal();
-            updateRuler();
-        }
+function addNewBall() {
+if(isSimulating) return; 
+const b = new Ball(nextBallId++);
+balls.push(b);
+distributeBallsHorizontal();
+updateRuler();
+}
 
-        function updateBallSettings(id, type, value) {
-            const b = balls.find(ball => ball.id === id);
-            if (!b) return;
+function removeBall(id) {
+if(isSimulating) return;
+balls = balls.filter(b => b.id !== id);
+document.getElementById(`card-${id}`).remove();
+document.getElementById(`ball-${id}`).remove();
+distributeBallsHorizontal();
+updateRuler();
+}
 
-            if (type === 'height') {
-                b.height = parseFloat(value);
-                b.currentHeight = b.height;
-                document.getElementById(`stat-h-${id}`).innerText = b.height.toFixed(1);
-                updateRuler(); // Height changed, ruler might need scaling
-            } else if (type === 'color') {
-                b.color = value;
-                b.updateAppearance();
-            }
-        }
+function updateBallSettings(id, type, value) {
+const b = balls.find(ball => ball.id === id);
+if (!b) return;
 
-        // Evenly space balls horizontally
-        function distributeBallsHorizontal() {
-            const count = balls.length;
-            if (count === 0) return;
-            
-            // Percentage width for each section
-            const segment = 100 / count; 
-            
-            balls.forEach((b, index) => {
-                // Center of the segment
-                const leftPos = (index * segment) + (segment / 2);
-                b.element.style.left = `${leftPos}%`;
-            });
-        }
+if (type === 'height') {
+b.height = parseFloat(value);
+b.currentHeight = b.height;
+document.getElementById(`stat-h-${id}`).innerText = b.height.toFixed(1);
+updateRuler(); 
+} 
+else if (type === 'mode') {
+const v0Row = document.getElementById(`v0-row-${id}`);
+const v0Input = document.getElementById(`input-v0-${id}`);
 
-        // --- 4. PHYSICS LOOP (PURE FREE FALL) ---
+if (value === 'freefall') {
+// Hide input and reset speed to 0
+v0Row.classList.add('hidden');
+b.initialVelocity = 0;
+b.isFreeFall = true;
+// Reset the actual input box value to 0 for clarity
+v0Input.value = 0;
+} else {
+// Show input
+v0Row.classList.remove('hidden');
+b.isFreeFall = false;
+b.initialVelocity = parseFloat(v0Input.value);
+}
+// Update text display
+document.getElementById(`stat-v-${id}`).innerText = b.initialVelocity.toFixed(1);
+}
+else if (type === 'v0') {
+b.initialVelocity = parseFloat(value);
+b.velocity = b.initialVelocity;
+document.getElementById(`stat-v-${id}`).innerText = b.initialVelocity.toFixed(1);
+} 
+else if (type === 'color') {
+b.color = value;
+b.updateAppearance();
+}
+updateBallVisuals(b, b.height, getMaxHeight());
+}
 
-        function startAll() {
-            if (balls.length === 0) return alert("Add a ball first!");
-            if (isSimulating) return;
+function distributeBallsHorizontal() {
+const count = balls.length;
+if (count === 0) return;
+const segment = 100 / count; 
+balls.forEach((b, index) => {
+const leftPos = (index * segment) + (segment / 2);
+b.element.style.left = `${leftPos}%`;
+});
+}
 
-            isSimulating = true;
-            simulationStartTime = performance.now();
-            
-            // Lock inputs
-            document.querySelectorAll('input, .btn-add, .remove-ball').forEach(el => el.disabled = true);
+// --- 4. PHYSICS LOOP ---
 
-            requestAnimationFrame(gameLoop);
-        }
+function startAll() {
+if (balls.length === 0) return alert("Add a ball first!");
+if (isSimulating) return;
 
-        function resetAll() {
-            isSimulating = false;
-            cancelAnimationFrame(animationId);
-            
-            balls.forEach(b => {
-                b.resetPhysics();
-                updateBallVisuals(b, 0, getMaxHeight()); // Reset position to top
-            });
+isSimulating = true;
+simulationStartTime = performance.now();
 
-            // Unlock inputs
-            document.querySelectorAll('input, .btn-add, .remove-ball').forEach(el => el.disabled = false);
-        }
+// Lock inputs
+document.querySelectorAll('input, select, .btn-add, .remove-ball').forEach(el => el.disabled = true);
 
-        function gameLoop(currentTime) {
-            let t = (currentTime - simulationStartTime) / 1000; // Total time elapsed (s)
-            
-            let allFinished = true;
-            const maxHeight = getMaxHeight();
+requestAnimationFrame(gameLoop);
+}
 
-            balls.forEach(b => {
-                if (!b.finished) {
-                    // --- PHYSICS: FREE FALL (Vi = 0) ---
-                    // Distance = 0.5 * g * t^2
-                    // Velocity = g * t
-                    
-                    let dropDist = 0.5 * g * Math.pow(t, 2);
-                    
-                    b.currentHeight = b.height - dropDist;
-                    b.velocity = g * t;
+function resetAll() {
+isSimulating = false;
+cancelAnimationFrame(animationId);
 
-                    // Collision Check
-                    if (b.currentHeight <= 0) {
-                        b.currentHeight = 0;
-                        b.finished = true;
-                        
-                        // Exact impact calculation for logs
-                        // t = sqrt(2h/g)
-                        let finalT = Math.sqrt((2 * b.height) / g);
-                        // Vf = g * t
-                        let finalV = g * finalT;
-                        
-                        b.velocity = finalV;
-                        b.timeElapsed = finalT;
-                        logResult(b);
-                    } else {
-                        b.timeElapsed = t;
-                        allFinished = false; // Still one falling
-                    }
+balls.forEach(b => {
+b.resetPhysics();
+updateBallVisuals(b, b.height, getMaxHeight()); 
+});
 
-                    // Update Live Stats
-                    document.getElementById(`stat-h-${b.id}`).innerText = b.currentHeight.toFixed(1);
-                    document.getElementById(`stat-v-${b.id}`).innerText = b.velocity.toFixed(1);
-                }
-                
-                // Update DOM position
-                updateBallVisuals(b, b.currentHeight, maxHeight);
-            });
+// Unlock inputs
+document.querySelectorAll('input, select, .btn-add, .remove-ball').forEach(el => el.disabled = false);
+}
 
-            if (!allFinished) {
-                animationId = requestAnimationFrame(gameLoop);
-            } else {
-                isSimulating = false;
-                document.querySelectorAll('input, .btn-add, .remove-ball').forEach(el => el.disabled = false);
-            }
-        }
+function gameLoop(currentTime) {
+let t = (currentTime - simulationStartTime) / 1000; 
 
-        // Maps physics height to pixels based on the "Tallest" ball (Zoom/Scale)
-        function updateBallVisuals(ballObj, currentH, maxH) {
-            const containerH = container.clientHeight;
-            const borderBottom = 15; // Ground thickness
-            const ballSize = 30; 
-            
-            // Available vertical space for movement
-            const availablePx = containerH - ballSize - borderBottom;
-            
-            // Pixels per meter (Scaling Factor)
-            const pxPerMeter = availablePx / maxH;
-            
-            // How far from top?
-            // If ball is at maxH, top is 0. If at 0, top is availablePx.
-            const metersFromTop = maxH - currentH;
-            let topPx = metersFromTop * pxPerMeter;
+let allFinished = true;
+const maxHeight = getMaxHeight();
 
-            ballObj.element.style.top = `${topPx}px`;
-        }
+balls.forEach(b => {
+if (!b.finished) {
+// d = v0*t + 0.5*g*t^2
+let dropDist = (b.initialVelocity * t) + (0.5 * g * Math.pow(t, 2));
+b.currentHeight = b.height - dropDist;
 
-        function getMaxHeight() {
-            if (balls.length === 0) return 100;
-            return Math.max(...balls.map(b => b.height));
-        }
+b.velocity = b.initialVelocity + (g * t);
 
-        // --- 5. RULER & LOGGING ---
+if (b.currentHeight <= 0) {
+b.currentHeight = 0;
+b.finished = true;
 
-        function updateRuler() {
-            const maxH = getMaxHeight();
-            drawRuler(maxH);
-            // Also update ball positions immediately to reflect new scale
-            balls.forEach(b => updateBallVisuals(b, b.currentHeight, maxH));
-        }
+// Exact impact calculation
+let A = 0.5 * g;
+let B = b.initialVelocity;
+let C = -b.height;
 
-        function drawRuler(heightMeters) {
-            ruler.innerHTML = '';
-            const containerH = container.clientHeight;
-            const borderBottom = 15;
-            const ballSize = 30;
-            const availablePx = containerH - ballSize - borderBottom;
-            const pxPerMeter = availablePx / heightMeters;
+let discriminant = Math.pow(B, 2) - (4 * A * C);
+let finalT = (-B + Math.sqrt(discriminant)) / (2 * A);
 
-            // Determine step size for ticks
-            let step = 1;
-            if (heightMeters > 20) step = 5;
-            if (heightMeters > 50) step = 10;
-            if (heightMeters > 200) step = 50;
+let finalV = b.initialVelocity + (g * finalT);
 
-            for (let h = 0; h <= heightMeters; h += step) {
-                const mark = document.createElement('div');
-                mark.className = 'ruler-mark';
-                const label = document.createElement('div');
-                label.className = 'ruler-text';
-                label.innerText = h + 'm';
+b.velocity = finalV;
+b.timeElapsed = finalT;
+logResult(b);
+} else {
+b.timeElapsed = t;
+allFinished = false; 
+}
 
-                const metersFromTop = heightMeters - h;
-                // Add half ball size so 0m aligns with bottom of ball, max aligns with top of ball
-                let topPos = (metersFromTop * pxPerMeter) + (ballSize / 2); 
+document.getElementById(`stat-h-${b.id}`).innerText = b.currentHeight.toFixed(1);
+document.getElementById(`stat-v-${b.id}`).innerText = b.velocity.toFixed(1);
+}
 
-                // Visual alignment: 0m mark at bottom of ball travel
-                let visualTop = (metersFromTop * pxPerMeter) + ballSize; 
+updateBallVisuals(b, b.currentHeight, maxHeight);
+});
 
-                mark.style.top = visualTop + 'px';
-                label.style.top = visualTop + 'px';
+if (!allFinished) {
+animationId = requestAnimationFrame(gameLoop);
+} else {
+isSimulating = false;
+document.querySelectorAll('input, select, .btn-add, .remove-ball').forEach(el => el.disabled = false);
+}
+}
 
-                ruler.appendChild(mark);
-                ruler.appendChild(label);
-            }
-        }
+function updateBallVisuals(ballObj, currentH, maxH) {
+const containerH = container.clientHeight;
+const borderBottom = 15; 
+const ballSize = 30; 
+const availablePx = containerH - ballSize - borderBottom;
+const safeMaxH = maxH > 0 ? maxH : 1;
+const pxPerMeter = availablePx / safeMaxH;
 
-        function logResult(ballObj) {
-            // Clear placeholder
-            const list = document.getElementById('history-list');
-            if (list.children.length > 0 && list.children[0].innerText.includes('Results')) {
-                list.innerHTML = '';
-            }
+const metersFromTop = safeMaxH - currentH;
+let topPx = metersFromTop * pxPerMeter;
 
-            const li = document.createElement('li');
-            li.innerHTML = `
+ballObj.element.style.top = `${topPx}px`;
+}
+
+function getMaxHeight() {
+if (balls.length === 0) return 100;
+return Math.max(...balls.map(b => b.height));
+}
+
+// --- 5. RULER & LOGGING ---
+
+function updateRuler() {
+const maxH = getMaxHeight();
+drawRuler(maxH);
+balls.forEach(b => updateBallVisuals(b, b.currentHeight, maxH));
+}
+
+function drawRuler(heightMeters) {
+ruler.innerHTML = '';
+const containerH = container.clientHeight;
+const borderBottom = 15;
+const ballSize = 30;
+const availablePx = containerH - ballSize - borderBottom;
+const pxPerMeter = availablePx / (heightMeters > 0 ? heightMeters : 1);
+
+let step = 1;
+if (heightMeters > 20) step = 5;
+if (heightMeters > 50) step = 10;
+if (heightMeters > 200) step = 50;
+
+for (let h = 0; h <= heightMeters; h += step) {
+const mark = document.createElement('div');
+mark.className = 'ruler-mark';
+const label = document.createElement('div');
+label.className = 'ruler-text';
+label.innerText = h + 'm';
+
+const metersFromTop = heightMeters - h;
+let visualTop = (metersFromTop * pxPerMeter) + ballSize; 
+
+mark.style.top = visualTop + 'px';
+label.style.top = visualTop + 'px';
+
+ruler.appendChild(mark);
+ruler.appendChild(label);
+}
+}
+
+function logResult(ballObj) {
+const list = document.getElementById('history-list');
+if (list.children.length > 0 && list.children[0].innerText.includes('Results')) {
+list.innerHTML = '';
+}
+
+const typeStr = ballObj.isFreeFall ? "Free Fall" : `Throw (v0=${ballObj.initialVelocity})`;
+
+const li = document.createElement('li');
+li.innerHTML = `
                 <span style="color:${ballObj.color}; font-weight:bold;">Ball ${ballObj.id}</span> | 
-                Drop: <b>${ballObj.height}m</b> <br>
+                <b>${typeStr}</b><br>
+                Drop: <b>${ballObj.height}m</b> | 
                 Time: <b>${ballObj.timeElapsed.toFixed(3)}s</b> | 
                 Final V: <b>${ballObj.velocity.toFixed(2)}m/s</b>
             `;
-            list.prepend(li);
-        }
+list.prepend(li);
+}
 
-        // --- INIT ---
-        window.onload = () => {
-            addNewBall(); // Start with 1 ball
-            window.addEventListener('resize', updateRuler);
-        };
+// --- INIT ---
+window.onload = () => {
+addNewBall(); 
+window.addEventListener('resize', updateRuler);
+};
 
-    </script>
+</script>
 </body>
 </html>
